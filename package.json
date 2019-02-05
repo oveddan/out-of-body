@@ -1,0 +1,20 @@
+{
+  "name": "out-of-body",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "NODE_ENV=development parcel index.html",
+    "build": "NODE_ENV=production parcel build index.html --public-url ./"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow-models/body-pix": "^0.1.0",
+    "@tensorflow/tfjs": "^0.15.0",
+    "clang-format": "^1.2.4",
+    "stats.js": "^0.17.0",
+    "parcel-bundler": "^1.9.4",
+    "typescript": "^3.1.1"
+  }
+}
