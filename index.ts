@@ -205,7 +205,7 @@ function swapBoundingBoxes(
     const randomPart = i === 0 ? leftHand : rightHand;
 
     const boundingBox = partBoundingBoxes[i];
-    // const nextBoundingBox = boundingBox === numParts - 1 ? 0 : i + 1;
+    // const randomPart = boundingBox === numParts - 1 ? 0 : i + 1;
     const randomBoundingBox = partBoundingBoxes[randomPart];
     // console.log(i, nextBoundingBox, boundingBox, randomBoundingBox);
 
@@ -292,7 +292,7 @@ export async function bindPage() {
 
   await loadVideo();
 
-  setupFPS();
+  // setupFPS();
 
   segmentBodyInRealTime();
 }
