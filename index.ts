@@ -18,7 +18,7 @@ import * as bodyPix from '@tensorflow-models/body-pix';
 import Stats from 'stats.js';
 
 import * as partColorScales from './part_color_scales';
-import {bottom, BoundingBox, ensureOffscreenCanvasCreated, getPartBoundingBoxes, height, left, right, shuffle, top, width} from './util';
+import {bottom, BoundingBox, drawBoundingBoxes, drawOnFace, ensureOffscreenCanvasCreated, getPartBoundingBoxes, height, left, loadImage, right, shuffle, swapBox, top, width} from './util';
 
 const stats = new Stats();
 
@@ -44,34 +44,6 @@ function isMobile() {
   return isAndroid() || isiOS();
 }
 
-// async function getVideoInputs() {
-//   if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-//     console.log('enumerateDevices() not supported.');
-//     return [];
-//   }
-
-//   const devices = await navigator.mediaDevices.enumerateDevices();
-
-//   const videoDevices = devices.filter(device => device.kind ===
-//   'videoinput');
-
-//   return videoDevices;
-// }
-
-// async function getDeviceIdForLabel(cameraLabel) {
-//   const videoInputs = await getVideoInputs();
-
-//   for (let i = 0; i < videoInputs.length; i++) {
-//     const videoInput = videoInputs[i];
-//     if (videoInput.label === cameraLabel) {
-//       return videoInput.deviceId;
-//     }
-//   }
-
-//   return null;
-// }
-
-// on mobile, facing mode is the preferred way to select a camera.
 // Here we use the camera label to determine if its the environment or
 // user facing camera
 function getFacingMode(cameraLabel) {
@@ -157,84 +129,19 @@ function setupFPS() {
   document.body.appendChild(stats.dom);
 }
 
-function drawBoundingBox(box: BoundingBox, ctx: CanvasRenderingContext2D) {
-  ctx.rect(
-      box[left], box[bottom], box[right] - box[left], box[top] - box[bottom]);
-  ctx.stroke();
-}
-
-
 const numParts = 24;
 
-const randomPartOrder = shuffle(Array.from(Array(numParts).keys()));
-
-function swapBox(
-    a: BoundingBox, b: BoundingBox, ctx: CanvasRenderingContext2D) {
-  // console.log(a[height], b[height], a[width], b[width]);
-
-  if (a[height] * b[height] * a[width] * b[width] === 0) {
-    return;
-  }
-
-  // console.log(a, b);
-
-  const image = ctx.getImageData(a[left], a[top], a[width], a[height]);
-
-  const swapImage = ctx.getImageData(b[left], b[top], b[width], b[height]);
-
-  // console.log('swap');
-
-  ctx.save();
-  ctx.scale(b[width] / a[width], b[height] / a[height]);
-  ctx.putImageData(swapImage, a[left], a[top]);
-  ctx.restore();
-  ctx.save();
-  ctx.scale(a[width] / b[width], a[height] / b[height]);
-  ctx.putImageData(image, b[left], b[top]);
-  ctx.restore();
-}
-
-const rightHand = 21;
-const leftHand = 23;
-const leftFace = 0;
-const rightFace = 1;
-
-function swapBoundingBoxes(
-    partBoundingBoxes: BoundingBox[], ctx: CanvasRenderingContext2D) {
-  for (let i = 0; i < 2; i++) {
-    const randomPart = i === 0 ? leftHand : rightHand;
-
-    const boundingBox = partBoundingBoxes[i];
-    // const randomPart = boundingBox === numParts - 1 ? 0 : i + 1;
-    const randomBoundingBox = partBoundingBoxes[randomPart];
-    // console.log(i, nextBoundingBox, boundingBox, randomBoundingBox);
-
-    // console.log(i);
-
-    if (boundingBox && randomBoundingBox) {
-      swapBox(boundingBox, randomBoundingBox, ctx);
-    }
-  }
-}
-
-function flip(ctx: CanvasRenderingContext2D) {
-  const image = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-  ctx.save();
-  ctx.scale(-1, 1);
-  ctx.translate(-ctx.canvas.width, 0);
-
-  ctx.putImageData(image, 0, 0);
-  ctx.restore();
-}
+const faceImageUrl = require('./assets/harvey.png');
 
 /**
  * Feeds an image to BodyPix to estimate segmentation - this is where the
  * magic happens. This function loops with a requestAnimationFrame method.
  */
-function segmentBodyInRealTime() {
+async function segmentBodyInRealTime() {
   const canvas = document.getElementById('output') as HTMLCanvasElement;
   // since images are being fed from a webcam
+
+  const faceImage = await loadImage(faceImageUrl);
 
   async function bodySegmentationFrame() {
     // if changing the model or the camera, wait a second for it to complete
@@ -264,13 +171,10 @@ function segmentBodyInRealTime() {
 
     ctx.drawImage(state.video, 0, 0);
 
-    partBoundingBoxes.forEach(
-        box => {
-            // draw bounding boxes
-            // drawBoundingBox(box, ctx);
-        });
+    // drawBoundingBoxes(partBoundingBoxes, ctx);
+    // swapBoundingBoxes(partBoundingBoxes, ctx);
+    drawOnFace(ctx, partBoundingBoxes, faceImage);
 
-    swapBoundingBoxes(partBoundingBoxes, ctx);
     // End monitoring code for frames per second
     stats.end();
 

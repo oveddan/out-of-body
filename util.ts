@@ -76,3 +76,120 @@ export function ensureOffscreenCanvasCreated(id: string): HTMLCanvasElement {
   }
   return offScreenCanvases[id];
 }
+
+
+export function swapBox(
+    a: BoundingBox, b: BoundingBox, ctx: CanvasRenderingContext2D) {
+  // console.log(a[height], b[height], a[width], b[width]);
+
+  if (a[height] * b[height] * a[width] * b[width] === 0) {
+    return;
+  }
+
+  // console.log(a, b);
+
+  const image = ctx.getImageData(a[left], a[top], a[width], a[height]);
+
+  const swapImage = ctx.getImageData(b[left], b[top], b[width], b[height]);
+
+  // console.log('swap');
+
+  ctx.save();
+  ctx.scale(b[width] / a[width], b[height] / a[height]);
+  ctx.putImageData(swapImage, a[left], a[top]);
+  ctx.restore();
+  ctx.save();
+  ctx.scale(a[width] / b[width], a[height] / b[height]);
+  ctx.putImageData(image, b[left], b[top]);
+  ctx.restore();
+}
+
+const rightHand = 21;
+const leftHand = 23;
+const leftFace = 0;
+const rightFace = 1;
+
+export function swapBoundingBoxes(
+    partBoundingBoxes: BoundingBox[], ctx: CanvasRenderingContext2D) {
+  for (let i = 0; i < 2; i++) {
+    const randomPart = i === 0 ? leftHand : rightHand;
+
+    const boundingBox = partBoundingBoxes[i];
+    const randomBoundingBox = partBoundingBoxes[randomPart];
+
+    if (boundingBox && randomBoundingBox) {
+      swapBox(boundingBox, randomBoundingBox, ctx);
+    }
+  }
+}
+
+export function flip(ctx: CanvasRenderingContext2D) {
+  const image = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.translate(-ctx.canvas.width, 0);
+
+  ctx.putImageData(image, 0, 0);
+  ctx.restore();
+}
+
+function drawBoundingBox(box: BoundingBox, ctx: CanvasRenderingContext2D) {
+  ctx.rect(
+      box[left], box[bottom], box[right] - box[left], box[top] - box[bottom]);
+  ctx.stroke();
+}
+
+export function drawBoundingBoxes(
+    partBoundingBoxes: BoundingBox[], ctx: CanvasRenderingContext2D) {
+  partBoundingBoxes.forEach(box => {
+    // draw bounding boxes
+    drawBoundingBox(box, ctx);
+  });
+}
+
+export async function loadImage(url: string) {
+  const image = new Image();
+  const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+    image.crossOrigin = '';
+    image.onload = () => {
+      resolve(image);
+    };
+  });
+
+  image.src = url;
+  return promise;
+}
+
+
+function getFaceBox(partBoxes) {
+  const top = 0;
+  const right = 1;
+  const bottom = 2;
+  const left = 3;
+
+  const leftFace = 0;
+  const rightFace = 1;
+
+
+  const leftFaceBox = partBoxes[leftFace];
+  const rightFaceBox = partBoxes[rightFace];
+
+  return {
+    top: Math.min(leftFaceBox[top], rightFaceBox[top]),
+    right: Math.max(leftFaceBox[right], rightFaceBox[right]),
+    bottom: Math.max(leftFaceBox[bottom], rightFaceBox[bottom]),
+    left: Math.min(leftFaceBox[left], rightFaceBox[left])
+  };
+}
+
+export function drawOnFace(
+    ctx: CanvasRenderingContext2D, partBoundingBoxes: BoundingBox[],
+    faceImage: HTMLImageElement) {
+  const faceBox = getFaceBox(partBoundingBoxes);
+
+  const width = faceBox.right - faceBox.left;
+  const height = faceBox.top - faceBox.bottom;
+
+  ctx.drawImage(faceImage, faceBox.left, faceBox.bottom, width, height);
+}
