@@ -175,6 +175,10 @@ function getFaceBox(partBoxes) {
   const leftFaceBox = partBoxes[leftFace];
   const rightFaceBox = partBoxes[rightFace];
 
+  if (!leftFaceBox || !rightFaceBox) {
+    return {top: 0, right: 0, bottom: 0, left: 0};
+  }
+
   return {
     top: Math.min(leftFaceBox[top], rightFaceBox[top]),
     right: Math.max(leftFaceBox[right], rightFaceBox[right]),

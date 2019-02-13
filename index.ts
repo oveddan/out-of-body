@@ -170,8 +170,11 @@ async function segmentBodyInRealTime() {
     const ctx = canvas.getContext('2d');
 
     ctx.save();
-    ctx.scale(-1, 1);
-    ctx.translate(-ctx.canvas.width, 0);
+
+    if (flipHorizontally) {
+      ctx.scale(-1, 1);
+      ctx.translate(-ctx.canvas.width, 0);
+    }
 
     ctx.drawImage(state.video, 0, 0);
 
