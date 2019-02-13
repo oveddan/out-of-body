@@ -169,11 +169,17 @@ async function segmentBodyInRealTime() {
 
     const ctx = canvas.getContext('2d');
 
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.translate(-ctx.canvas.width, 0);
+
     ctx.drawImage(state.video, 0, 0);
 
     // drawBoundingBoxes(partBoundingBoxes, ctx);
     // swapBoundingBoxes(partBoundingBoxes, ctx);
     drawOnFace(ctx, partBoundingBoxes, faceImage);
+
+    ctx.restore();
 
     // End monitoring code for frames per second
     stats.end();
